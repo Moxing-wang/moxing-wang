@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人简历</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            padding: 30px 20px;
+            line-height: 1.6;
+        }
+
+        /* 页面标题 */
+        .page-title {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        /* PDF展示区域 */
+        .pdf-container {
+            max-width: 1200px;
+            margin: 0 auto 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .pdf-header {
+            background-color: #3498db;
+            color: white;
+            padding: 20px 30px;
+            font-size: 20px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pdf-header svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* PDF分页控制区 */
+        .pdf-nav {
+            background-color: #f5f7fa;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .nav-btn {
+            padding: 8px 20px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background-color: #1a252f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .page-info {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        #pdf-viewer {
+            width: 100%;
+            min-height: 800px;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+        }
+
+        /* 按钮区域 */
+        .btn-group {
+            max-width: 1200px;
+            margin: 0 auto 50px;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 16px 40px;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .action-btn:hover {
+            background-color: #1a252f;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .action-btn svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .action-btn:nth-child(1) {
+            background-color: #e67e22;
+        }
+
+        .action-btn:nth-child(1):hover {
+            background-color: #d35400;
+        }
+
+        .action-btn:nth-child(2) {
+            background-color: #9b59b6;
+        }
+
+        .action-btn:nth-child(2):hover {
+            background-color: #8e44ad;
+        }
+
+        /* 加载提示样式 */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            color: #7f8c8d;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 错误提示样式 */
+        .error {
+            text-align: center;
+            color: #e74c3c;
+            font-size: 18px;
+            padding: 50px;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+
+            .pdf-container {
+                margin-bottom: 30px;
+            }
+
+            .pdf-header {
+                font-size: 18px;
+                padding: 15px 20px;
+            }
+
+            .pdf-nav {
+                padding: 12px 15px;
+                gap: 10px;
+            }
+
+            .nav-btn {
+                padding: 6px 15px;
+                font-size: 14px;
+            }
+
+            #pdf-viewer {
+                min-height: 500px;
+                padding: 15px;
+            }
+
+            .btn-group {
+                gap: 20px;
+                flex-direction: column;
+                padding: 0 20px;
+            }
+
+            .action-btn {
+                padding: 14px 30px;
+                font-size: 16px;
+                justify-content: center;
+            }
+        }
+
+        /* 适配移动设备PDF渲染 */
+        @media (max-width: 480px) {
+            #pdf-viewer {
+                min-height: 400px;
+            }
+
+            .page-info {
+                font-size: 14px;
+            }
+        }
+    </style>
+    <!-- PDF.js 库（CDN加载，支持跨设备访问） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+</head>
+<body>
+    <h1 class="page-title">项目文件与视频展示平台</h1>
+
+    <!-- PDF展示区域 -->
+    <div class="pdf-container">
+        <div class="pdf-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            项目PDF文件预览
+        </div>
+
+        <!-- PDF分页控制按钮 -->
+        <div class="pdf-nav">
+            <button class="nav-btn" id="prev-page" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M15 18l-6-6 6-6"></path>
+                </svg>
+                上一页
+            </button>
+            <span class="page-info" id="page-status">加载中...</span>
+            <button class="nav-btn" id="next-page" disabled>
+                下一页
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 18l6-6-6-6"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="pdf-viewer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>PDF文件加载中，请稍候...</p>
+                <p>（跨设备访问请确保文件URL可公开访问）</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 视频跳转按钮区域 -->
+    <div class="btn-group">
+        <!-- UI界面展示视频跳转按钮 -->
+        <a href="YOUR_UI_VIDEO_URL" class="action-btn" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+            UI界面展示视频
+        </a>
+
+        <!-- 游戏模型展示视频跳转按钮 -->
+        <a href="YOUR_GAME_MODEL_VIDEO_URL" class="action-btn" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 9l2 10h16l2-10M6 17H4v-6h2m14 6h-2v-6h2M6 7c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2"></path>
+            </svg>
+            游戏模型展示视频
+        </a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --------------------------
+            // 核心配置（用户必须修改以下3个参数）
+            // --------------------------
+            // 1. PDF文件URL（支持远程URL或本地相对路径，跨设备访问需用公开可访问的URL）
+            const PDF_FILE_URL = 'https://pan.xunlei.com/s/VOf3iud8pKEDWnSMmpp2EqtFA1?pwd=jimd#'; 
+            // 示例：'https://example.com/your-project.pdf' 或 './your-project.pdf'（本地同目录）
+            
+            // 2. UI界面展示视频URL（公开可访问的视频地址）
+            const UI_VIDEO_URL = 'https://pan.xunlei.com/s/VOf3j9pAnAiV-5xfphtQL-_PA1?pwd=9qvz#'; 
+            // 示例：'https://example.com/ui-demo.mp4' 或 'https://youtu.be/xxx'（YouTube链接）
+            
+            // 3. 游戏模型展示视频URL（公开可访问的视频地址）
+            const GAME_MODEL_VIDEO_URL = 'https://pan.xunlei.com/s/VOf3jIJGd_wGTwS3pBQ_pftzA1?pwd=ve3z#'; 
+            // 示例：'https://example.com/game-model-demo.mp4' 或 'https://v.qq.com/x/page/xxx.html'（腾讯视频）
+
+            // --------------------------
+            // 全局状态管理
+            // --------------------------
+            let pdfDoc = null; // PDF文档实例
+            let currentPage = 1; // 当前页码
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const pageStatus = document.getElementById('page-status');
+            const prevPageBtn = document.getElementById('prev-page');
+            const nextPageBtn = document.getElementById('next-page');
+            const videoButtons = document.querySelectorAll('.action-btn');
+
+            // --------------------------
+            // 初始化视频链接
+            // --------------------------
+            if (UI_VIDEO_URL && !UI_VIDEO_URL.includes('YOUR_')) {
+                videoButtons[0].setAttribute('href', UI_VIDEO_URL);
+            }
+            if (GAME_MODEL_VIDEO_URL && !GAME_MODEL_VIDEO_URL.includes('YOUR_')) {
+                videoButtons[1].setAttribute('href', GAME_MODEL_VIDEO_URL);
+            }
+
+            // --------------------------
+            // PDF加载与渲染逻辑
+            // --------------------------
+            async function loadPDF() {
+                try {
+                    // 检查PDF URL是否配置
+                    if (PDF_FILE_URL.includes('YOUR_')) {
+                        showError(`
+                            <p>❌ 请先配置PDF文件URL！</p>
+                            <p>配置步骤：</p>
+                            <p>1. 打开当前HTML文件</p>
+                            <p>2. 找到 PDF_FILE_URL 变量</p>
+                            <p>3. 替换为公开可访问的PDF URL（如：https://example.com/your-pdf.pdf）</p>
+                            <p>4. 确保URL在所有设备上都能访问（建议使用云存储如阿里云OSS、GitHub Pages等）</p>
+                        `);
+                        return;
+                    }
+
+                    // 加载PDF文档
+                    pdfDoc = await pdfjsLib.getDocument({
+                        url: PDF_FILE_URL,
+                        cMapPacked: true, // 支持中文显示
+                        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdf.js@3.4.120/cmaps/' // 中文映射文件CDN
+                    }).promise;
+
+                    console.log('PDF加载成功，总页数：', pdfDoc.numPages);
+                    
+                    // 更新页码状态
+                    updatePageStatus();
+                    // 渲染第一页
+                    renderPage(currentPage);
+                    // 绑定分页按钮事件
+                    bindNavButtons();
+                    // 检查视频URL配置
+                    checkVideoUrls();
+
+                } catch (error) {
+                    console.error('PDF加载失败：', error);
+                    showError(`
+                        <p>❌ PDF文件加载失败！</p>
+                        <p>可能原因：</p>
+                        <p>1. PDF URL不正确或文件不存在</p>
+                        <p>2. 跨域限制（请确保PDF文件所在服务器允许跨域访问）</p>
+                        <p>3. 网络连接问题</p>
+                        <p>解决方案：使用公开可访问的PDF URL（如GitHub Pages、云存储等）</p>
+                    `);
+                }
+            }
+
+            // 渲染指定页码
+            async function renderPage(pageNum) {
+                try {
+                    // 显示加载状态
+                    pdfViewer.innerHTML = `
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>正在加载第 ${pageNum} 页...</p>
+                        </div>
+                    `;
+
+                    // 获取指定页
+                    const page = await pdfDoc.getPage(pageNum);
+                    
+                    // 计算渲染比例（适配不同设备屏幕）
+                    const containerWidth = pdfViewer.clientWidth - 60; // 减去内边距
+                    const viewport = page.getViewport({ scale: 1 });
+                    const scale = Math.min(containerWidth / viewport.width, 2.5); // 最大缩放2.5倍
+                    const scaledViewport = page.getViewport({ scale: scale });
+
+                    // 创建Canvas
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = scaledViewport.height;
+                    canvas.width = scaledViewport.width;
+                    canvas.style.maxWidth = '100%';
+                    canvas.style.height = 'auto';
+
+                    // 渲染PDF页面
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: scaledViewport
+                    };
+                    await page.render(renderContext).promise;
+
+                    // 更新页面内容
+                    pdfViewer.innerHTML = '';
+                    pdfViewer.appendChild(canvas);
+
+                    // 更新当前页码和按钮状态
+                    currentPage = pageNum;
+                    updatePageStatus();
+                    updateNavButtons();
+
+                } catch (error) {
+                    console.error('页面渲染失败：', error);
+                    showError(`<p>❌ 第 ${pageNum} 页渲染失败，请重试！</p>`);
+                }
+            }
+
+            // --------------------------
+            // 分页控制辅助函数
+            // --------------------------
+            function updatePageStatus() {
+                if (pdfDoc) {
+                    pageStatus.textContent = `第 ${currentPage} 页 / 共 ${pdfDoc.numPages} 页`;
+                } else {
+                    pageStatus.textContent = '加载中...';
+                }
+            }
+
+            function updateNavButtons() {
+                if (!pdfDoc) return;
+                
+                // 第一页时禁用上一页按钮
+                prevPageBtn.disabled = currentPage <= 1;
+                // 最后一页时禁用下一页按钮
+                nextPageBtn.disabled = currentPage >= pdfDoc.numPages;
+            }
+
+            function bindNavButtons() {
+                // 上一页
+                prevPageBtn.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        renderPage(currentPage - 1);
+                    }
+                });
+
+                // 下一页
+                nextPageBtn.addEventListener('click', () => {
+                    if (currentPage < pdfDoc.numPages) {
+                        renderPage(currentPage + 1);
+                    }
+                });
+            }
+
+            // --------------------------
+            // 错误提示显示
+            // --------------------------
+            function showError(message) {
+                pdfViewer.innerHTML = `<div class="error">${message}</div>`;
+                pageStatus.textContent = '加载失败';
+            }
+
+            // --------------------------
+            // 视频URL检查
+            // --------------------------
+            function checkVideoUrls() {
+                videoButtons.forEach((btn, index) => {
+                    const href = btn.getAttribute('href');
+                    if (href.includes('YOUR_')) {
+                        btn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const type = index === 0 ? 'UI界面展示' : '游戏模型展示';
+                            alert(`请先配置${type}视频的公开URL！\n\n配置步骤：\n1. 打开当前HTML文件\n2. 找到对应的视频URL变量\n3. 替换为公开可访问的视频地址（如MP4文件URL、YouTube链接等）`);
+                        });
+                    }
+                });
+            }
+
+            // --------------------------
+            // 窗口大小自适应
+            // --------------------------
+            window.addEventListener('resize', () => {
+                if (pdfDoc) {
+                    renderPage(currentPage); // 重新渲染当前页以适配新尺寸
+                }
+            });
+
+            // --------------------------
+            // 启动应用
+            // --------------------------
+            loadPDF();
+        });
+    </script>
+</body>
+</html>
