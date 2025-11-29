@@ -363,7 +363,7 @@
             }
 
             // 配置PDF.js工作线程路径（必须与pdf.mjs同级）
-            pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.mjs';
 
             // 初始化视频链接
             if (UI_VIDEO_URL && !UI_VIDEO_URL.includes('YOUR_')) {
@@ -528,3 +528,4 @@
     </script>
 </body>
 </html>
+
