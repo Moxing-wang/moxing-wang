@@ -252,8 +252,10 @@
             }
         }
     </style>
-    <!-- 国内稳定CDN（BootCDN），解决PDF.js加载失败问题 -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/pdf.js/4.6.82/pdf.min.js"></script>
+
+    <!-- 关键修复1：添加type="module"声明ES模块，确保pdf.mjs正确加载 -->
+    <!-- 路径说明：请根据实际项目结构调整，以下是标准结构配置 -->
+    <script type="module" src="./pdfjs/pdf.mjs"></script>
 </head>
 <body>
     <h1 class="page-title">个人简历展示平台</h1>
@@ -289,7 +291,7 @@
             <div class="loading">
                 <div class="spinner"></div>
                 <p>个人简历加载中，请稍候...</p>
-                <p>（跨设备访问请确保网络通畅）</p>
+                <p>（本地部署，无网络依赖）</p>
             </div>
         </div>
     </div>
@@ -318,17 +320,21 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // --------------------------
-            // 核心配置（仅需确认此链接正确！）
+            // 核心配置（请根据实际项目结构修改！）
             // --------------------------
-            // 确认：GitHub Pages已启用，链接格式为「https://用户名.github.io/仓库名/文件名.pdf」
-            const PDF_FILE_URL = 'https://moxing-wang.github.io/moxing-wang/个人简历.pdf'; 
-            
-            // 视频URL（已保留你的迅雷网盘配置）
+            const PDF_FILE_NAME = '个人简历.pdf'; // PDF文件名（必须正确）
+            // 路径说明：
+            // 1. 若index.html和pdfjs文件夹在同一目录 → ./${PDF_FILE_NAME}
+            // 2. 若PDF在pdfjs同级目录 → ./${PDF_FILE_NAME}
+            // 3. 请确保路径中无中文、空格等特殊字符
+            const PDF_FILE_URL = `./${PDF_FILE_NAME}`;
+
+            // 视频URL（保留原配置）
             const UI_VIDEO_URL = 'https://pan.xunlei.com/s/VOf3j9pAnAiV-5xfphtQL-_PA1?pwd=9qvz#'; 
             const GAME_MODEL_VIDEO_URL = 'https://pan.xunlei.com/s/VOf3jIJGd_wGTwS3pBQ_pftzA1?pwd=ve3z#'; 
 
             // --------------------------
-            // 全局状态与初始化
+            // 全局状态
             // --------------------------
             let pdfDoc = null;
             let currentPage = 1;
@@ -339,12 +345,25 @@
             const nextPageBtn = document.getElementById('next-page');
             const videoButtons = document.querySelectorAll('.action-btn');
 
-            // 关键：配置PDF.js工作线程（与CDN版本一致，国内访问稳定）
+            // --------------------------
+            // 关键修复2：正确配置PDF.js工作线程和路径
+            // --------------------------
             if (!window.pdfjsLib) {
-                showError('<p>❌ PDF渲染库加载失败，请检查网络或刷新页面重试！</p>');
+                showError(`
+                    <p>❌ PDF渲染库加载失败！</p>
+                    <p>请按以下步骤检查：</p>
+                    <ul>
+                        <li>1. 确认script标签已添加 type="module"（已在代码中修复）</li>
+                        <li>2. 检查pdfjs文件夹路径：当前配置为 ./pdfjs/（是否与实际一致？）</li>
+                        <li>3. 确认pdfjs文件夹中存在：pdf.mjs、pdf.worker.min.js、cmaps文件夹</li>
+                        <li>4. 若路径不同，请修改head中script标签的src属性和下方的workerSrc路径</li>
+                    </ul>
+                `);
                 return;
             }
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.bootcdn.net/ajax/libs/pdf.js/4.6.82/pdf.worker.min.js';
+
+            // 配置PDF.js工作线程路径（必须与pdf.mjs同级）
+            pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
 
             // 初始化视频链接
             if (UI_VIDEO_URL && !UI_VIDEO_URL.includes('YOUR_')) {
@@ -355,34 +374,20 @@
             }
 
             // --------------------------
-            // PDF加载核心逻辑（优化中文、跨域、路径问题）
+            // PDF加载核心逻辑
             // --------------------------
             async function loadPDF() {
                 try {
-                    // 1. 验证链接格式（禁止Raw链接，强制GitHub Pages链接）
-                    if (PDF_FILE_URL.includes('raw.githubusercontent.com')) {
-                        showError(`
-                            <p>❌ PDF链接格式错误！</p>
-                            <p>请使用GitHub Pages专属链接，格式：</p>
-                            <p>https://用户名.github.io/仓库名/个人简历.pdf</p>
-                            <p>获取方式：仓库 → Settings → Pages → 复制基础URL + 文件名</p>
-                        `);
-                        return;
-                    }
-
-                    // 2. 处理中文/特殊字符路径
-                    const encodedPdfUrl = encodeURI(PDF_FILE_URL);
-
-                    // 3. 加载PDF（配置中文支持，关闭跨域凭证）
+                    // 加载本地PDF（配置字符映射，解决中文显示问题）
                     pdfDoc = await pdfjsLib.getDocument({
-                        url: encodedPdfUrl,
-                        cMapPacked: true, // 支持中文显示
-                        cMapUrl: 'https://cdn.bootcdn.net/ajax/libs/pdf.js/4.6.82/cmaps/', // 中文映射文件
-                        withCredentials: false // 解决跨域问题
+                        url: PDF_FILE_URL,
+                        cMapPacked: true,
+                        cMapUrl: './pdfjs/cmaps/', // 字符映射文件路径（必须存在cmaps文件夹）
+                        withCredentials: false,
+                        maxImageSize: 1024 * 1024 * 10 // 增加图片加载限制
                     }).promise;
 
-                    // 4. 加载成功后初始化页面
-                    console.log('✅ 简历加载成功，总页数：', pdfDoc.numPages);
+                    console.log('✅ 本地简历加载成功，总页数：', pdfDoc.numPages);
                     updatePageStatus();
                     await renderPage(currentPage);
                     bindNavButtons();
@@ -390,41 +395,26 @@
 
                 } catch (error) {
                     console.error('❌ PDF加载失败详情：', error);
-                    // 分场景精准提示错误
-                    if (error.message?.includes('404')) {
-                        showError(`
-                            <p>❌ 404错误：PDF文件未找到！</p>
-                            <p>可能原因：</p>
-                            <ul>
-                                <li>链接中的仓库名/文件名拼写错误</li>
-                                <li>PDF文件未提交到GitHub仓库</li>
-                                <li>GitHub Pages部署未完成（刚提交需等1-5分钟）</li>
-                            </ul>
-                            <p>快速检查：<a href="${encodedPdfUrl}" target="_blank" rel="noopener noreferrer">点击直接访问PDF链接</a></p>
-                        `);
-                    } else if (error.message?.includes('CORS')) {
-                        showError(`
-                            <p>❌ 跨域访问被拒绝！</p>
-                            <p>解决方案：确认链接是GitHub Pages链接（非Raw链接），GitHub Pages默认支持跨域</p>
-                        `);
-                    } else {
-                        showError(`
-                            <p>❌ 简历加载失败！</p>
-                            <p>错误信息：${escapeHtml(error.message || '未知错误')}</p>
-                            <p>建议：</p>
-                            <ul>
-                                <li>检查PDF链接是否正确（复制到浏览器直接打开）</li>
-                                <li>清除浏览器缓存后刷新页面</li>
-                                <li>确认网络能正常访问GitHub Pages</li>
-                            </ul>
-                        `);
-                    }
+                    showError(`
+                        <p>❌ 本地简历加载失败！</p>
+                        <p>路径排查（最常见问题）：</p>
+                        <ul>
+                            <li>→ PDF文件路径：${PDF_FILE_URL}（文件是否存在？文件名是否正确？）</li>
+                            <li>→ PDF.js路径：./pdfjs/pdf.mjs（文件是否存在？）</li>
+                            <li>→ Worker路径：./pdfjs/pdf.worker.min.js（文件是否存在？）</li>
+                            <li>→ 字符映射：./pdfjs/cmaps/（文件夹是否存在且有内容？）</li>
+                        </ul>
+                        <p>本地测试方法（必看）：</p>
+                        <p>1. 打开命令行，进入项目根目录</p>
+                        <p>2. 运行命令：python -m http.server 8000（需要安装Python）</p>
+                        <p>3. 浏览器访问：http://localhost:8000（避免直接打开HTML文件的跨域问题）</p>
+                    `);
                     pageStatus.textContent = '加载失败';
                 }
             }
 
             // --------------------------
-            // 页面渲染逻辑（适配不同设备尺寸）
+            // 页面渲染逻辑
             // --------------------------
             async function renderPage(pageNum) {
                 try {
@@ -436,14 +426,14 @@
                         </div>
                     `;
 
-                    // 获取PDF页面并计算渲染比例
+                    // 获取页面并渲染
                     const page = await pdfDoc.getPage(pageNum);
-                    const containerWidth = Math.max(300, pdfViewer.clientWidth - 60); // 最小宽度300px
+                    const containerWidth = Math.max(300, pdfViewer.clientWidth - 60);
                     const viewport = page.getViewport({ scale: 1 });
-                    const scale = Math.min(containerWidth / viewport.width, 2.5); // 最大缩放2.5倍（保证清晰度）
+                    const scale = Math.min(containerWidth / viewport.width, 2.5); // 限制最大缩放比例
                     const scaledViewport = page.getViewport({ scale: scale });
 
-                    // 创建Canvas并渲染
+                    // 创建canvas元素
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.height = scaledViewport.height;
@@ -451,53 +441,68 @@
                     canvas.style.maxWidth = '100%';
                     canvas.style.height = 'auto';
                     canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+                    canvas.style.borderRadius = '4px';
 
-                    await page.render({
+                    // 渲染PDF页面到canvas
+                    const renderContext = {
                         canvasContext: context,
                         viewport: scaledViewport
-                    }).promise;
+                    };
+                    await page.render(renderContext).promise;
 
-                    // 更新页面内容
+                    // 显示渲染结果
                     pdfViewer.innerHTML = '';
                     pdfViewer.appendChild(canvas);
 
-                    // 更新页码和按钮状态
+                    // 更新状态
                     currentPage = pageNum;
                     updatePageStatus();
                     updateNavButtons();
 
                 } catch (error) {
                     console.error('❌ 页面渲染失败：', error);
-                    showError(`<p>❌ 第 ${pageNum} 页渲染失败，请刷新页面重试！</p>`);
+                    showError(`
+                        <p>❌ 第 ${pageNum} 页渲染失败！</p>
+                        <p>可能原因：PDF文件损坏或加密</p>
+                        <p>解决方案：重新导出PDF（确保不加密），或更换PDF文件测试</p>
+                    `);
                 }
             }
 
             // --------------------------
-            // 辅助函数（页码、按钮、错误处理）
+            // 辅助函数
             // --------------------------
+            // 更新页码状态
             function updatePageStatus() {
                 pageStatus.textContent = pdfDoc ? `第 ${currentPage} 页 / 共 ${pdfDoc.numPages} 页` : '加载中...';
             }
 
+            // 更新分页按钮状态
             function updateNavButtons() {
                 if (!pdfDoc) return;
                 prevPageBtn.disabled = currentPage <= 1;
                 nextPageBtn.disabled = currentPage >= pdfDoc.numPages;
             }
 
+            // 绑定分页按钮事件
             function bindNavButtons() {
                 if (isNavBound) return;
-                prevPageBtn.addEventListener('click', () => currentPage > 1 && renderPage(currentPage - 1));
-                nextPageBtn.addEventListener('click', () => currentPage < pdfDoc.numPages && renderPage(currentPage + 1));
+                prevPageBtn.addEventListener('click', () => {
+                    if (currentPage > 1) renderPage(currentPage - 1);
+                });
+                nextPageBtn.addEventListener('click', () => {
+                    if (currentPage < pdfDoc.numPages) renderPage(currentPage + 1);
+                });
                 isNavBound = true;
             }
 
+            // 显示错误信息
             function showError(message) {
                 pdfViewer.innerHTML = `<div class="error">${message}</div>`;
             }
 
+            // 检查视频链接并添加提示
             function checkVideoLinks() {
-                // 迅雷网盘链接兼容性提示
                 videoButtons.forEach(btn => {
                     if (btn.href?.includes('pan.xunlei.com')) {
                         btn.addEventListener('click', (e) => {
@@ -509,22 +514,16 @@
                 });
             }
 
-            // HTML转义（防止错误信息中的特殊字符破坏页面）
-            function escapeHtml(str) {
-                return String(str).replace(/[&<>"']/g, s => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#39;'
-                }[s]));
-            }
-
             // --------------------------
             // 窗口自适应与启动加载
             // --------------------------
-            window.addEventListener('resize', () => pdfDoc && renderPage(currentPage));
-            loadPDF(); // 启动加载PDF
+            // 窗口大小改变时重新渲染当前页
+            window.addEventListener('resize', () => {
+                if (pdfDoc) renderPage(currentPage);
+            });
+
+            // 启动加载PDF（页面加载完成后执行）
+            loadPDF();
         });
     </script>
 </body>
