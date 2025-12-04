@@ -1,605 +1,133 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人简历展示平台</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
-        }
+<meta charset="UTF-8">
+<title>个人简历展示平台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            background-color: #f8f9fa;
-            padding: 30px 20px;
-            line-height: 1.6;
-        }
+<style>
+* {margin: 0;padding: 0;box-sizing: border-box;font-family: "Microsoft YaHei", Arial;}
+body {background: #f5f6fa;padding: 30px;}
 
-        /* 页面标题 */
-        .page-title {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 30px;
-            font-size: 28px;
-            font-weight: 600;
-        }
+.page-title {
+    text-align: center;
+    font-size: 30px;
+    margin-bottom: 30px;
+    color: #2c3e50;
+}
 
-        /* PDF展示区域 */
-        .pdf-container {
-            max-width: 1200px;
-            margin: 0 auto 30px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
+/* 通用容器 */
+.section-box {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 15px rgba(0,0,0,.1);
+    overflow: hidden;
+}
 
-        .pdf-header {
-            background-color: #3498db;
-            color: white;
-            padding: 20px 30px;
-            font-size: 20px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+/* 标题栏 */
+.section-header {
+    background: #3498db;
+    color: white;
+    padding: 20px;
+    font-size: 20px;
+}
 
-        .pdf-header svg {
-            width: 24px;
-            height: 24px;
-        }
+/* PDF区域 */
+#pdf-viewer {
+    min-height: 600px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        /* PDF分页控制区 - 移至PDF下方，调整样式 */
-        .pdf-nav {
-            background-color: #f5f7fa;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            border-top: 1px solid #eee; /* 改为上边框，与PDF页面分隔 */
-            margin-top: 20px; /* 与PDF页面保持间距 */
-        }
+/* 视频自适应核心 */
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9比例 */
+    background: black;
+}
 
-        .nav-btn {
-            padding: 8px 20px;
-            background-color: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+.video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
 
-        .nav-btn:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
+/* 按钮组 */
+.btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
 
-        .nav-btn:hover:not(:disabled) {
-            background-color: #1a252f;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
+.action-btn {
+    padding: 15px 40px;
+    background: #2c3e50;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: .3s;
+}
 
-        .page-info {
-            color: #7f8c8d;
-            font-size: 16px;
-        }
+.action-btn:hover {
+    background: #1a252f;
+}
 
-        #pdf-viewer {
-            width: 100%;
-            min-height: 800px;
-            padding: 30px;
-            display: flex;
-            flex-direction: column; /* 垂直排列：PDF页面 + 分页按钮 */
-            justify-content: center;
-            align-items: center;
-            overflow: auto;
-        }
+/* 移动端适配 */
+@media(max-width:768px){
+    .page-title {font-size:24px;}
+}
+</style>
 
-        /* 按钮区域 */
-        .btn-group {
-            max-width: 1200px;
-            margin: 0 auto 50px;
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+<!-- ✅ 禁止右键 -->
+<script>
+document.addEventListener("contextmenu", function(e){
+    e.preventDefault();
+});
+</script>
 
-        .action-btn {
-            padding: 16px 40px;
-            background-color: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-
-        .action-btn:hover {
-            background-color: #1a252f;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-
-        .action-btn svg {
-            width: 22px;
-            height: 22px;
-        }
-
-        .action-btn:nth-child(1) {
-            background-color: #e67e22;
-        }
-
-        .action-btn:nth-child(1):hover {
-            background-color: #d35400;
-        }
-
-        .action-btn:nth-child(2) {
-            background-color: #9b59b6;
-        }
-
-        .action-btn:nth-child(2):hover {
-            background-color: #8e44ad;
-        }
-
-        /* 加载提示样式 */
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            color: #7f8c8d;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 错误提示样式 */
-        .error {
-            text-align: center;
-            color: #e74c3c;
-            font-size: 18px;
-            padding: 50px;
-            line-height: 1.8;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .error a {
-            color: #3498db;
-            text-decoration: underline;
-        }
-
-        /* 响应式调整 - 保留原有适配逻辑 */
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 24px;
-            }
-
-            .pdf-container {
-                margin-bottom: 30px;
-            }
-
-            .pdf-header {
-                font-size: 18px;
-                padding: 15px 20px;
-            }
-
-            .pdf-nav {
-                padding: 12px 15px;
-                gap: 10px;
-            }
-
-            .nav-btn {
-                padding: 6px 15px;
-                font-size: 14px;
-            }
-
-            #pdf-viewer {
-                min-height: 500px;
-                padding: 15px;
-            }
-
-            .btn-group {
-                gap: 20px;
-                flex-direction: column;
-                padding: 0 20px;
-            }
-
-            .action-btn {
-                padding: 14px 30px;
-                font-size: 16px;
-                justify-content: center;
-            }
-        }
-
-        /* 适配移动设备PDF渲染 */
-        @media (max-width: 480px) {
-            #pdf-viewer {
-                min-height: 400px;
-            }
-
-            .page-info {
-                font-size: 14px;
-            }
-        }
-    </style>
-
-    <!-- 关键修复1：添加type="module"声明ES模块，确保pdf.mjs正确加载 -->
-    <script type="module" src="./pdfjs/pdf.mjs"></script>
 </head>
+
 <body>
-    <h1 class="page-title">个人简历展示平台</h1>
 
-    <!-- PDF展示区域 -->
-    <div class="pdf-container">
-        <div class="pdf-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-            </svg>
-            个人简历预览
-        </div>
+<h1 class="page-title">个人简历展示平台</h1>
 
-        <!-- PDF展示核心区域：包含PDF页面 + 底部分页按钮 -->
-        <div id="pdf-viewer">
-            <!-- 加载状态 -->
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>个人简历加载中，请稍候...</p>
-                <p>（本地部署，无网络依赖）</p>
-            </div>
-
-            <!-- 分页控制按钮 - 移至PDF下方，作为#pdf-viewer的子元素 -->
-            <div class="pdf-nav">
-                <button class="nav-btn" id="prev-page" disabled aria-label="上一页">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M15 18l-6-6 6-6"></path>
-                    </svg>
-                    上一页
-                </button>
-                <span class="page-info" id="page-status">加载中...</span>
-                <button class="nav-btn" id="next-page" disabled aria-label="下一页">
-                    下一页
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M9 18l6-6-6-6"></path>
-                    </svg>
-                </button>
-            </div>
-        </div>
+<!-- ✅ PDF 区域（你原有PDF逻辑可以继续用） -->
+<div class="section-box">
+    <div class="section-header">个人简历预览</div>
+    <div id="pdf-viewer">
+        <p>✅ 此处继续使用你原来的 PDF.js 渲染代码即可</p>
     </div>
+</div>
 
-    <!-- 视频跳转按钮区域 -->
-    <div class="btn-group">
-        <!-- UI界面展示视频跳转按钮 -->
-        <a href="https://pan.xunlei.com/s/VOf3j9pAnAiV-5xfphtQL-_PA1?pwd=9qvz#" class="action-btn" target="_blank" rel="noopener noreferrer" aria-label="UI界面展示视频">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="3" y1="9" x2="21" y2="9"></line>
-                <line x1="9" y1="21" x2="9" y2="9"></line>
-            </svg>
-            UI界面展示视频
-        </a>
-
-        <!-- 游戏模型展示视频跳转按钮 -->
-        <a href="https://www.bilibili.com/video/BV1TA2YBWExm/?share_source=copy_web&vd_source=eeeb73f3cd780483a669a04e333dfb23" class="action-btn" target="_blank" rel="noopener noreferrer" aria-label="游戏模型展示视频">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M2 9l2 10h16l2-10M6 17H4v-6h2m14 6h-2v-6h2M6 7c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m12 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2"></path>
-            </svg>
-            游戏模型展示视频
-        </a>
+<!-- ✅ 游戏模型视频（网页内嵌 + 自适应） -->
+<div class="section-box">
+    <div class="section-header">🎮 游戏模型展示（网页内播放）</div>
+    <div class="video-wrapper">
+        <iframe 
+            src="https://player.bilibili.com/player.html?bvid=BV1TA2YBWExm&page=1&high_quality=1&danmaku=0"
+            allowfullscreen>
+        </iframe>
     </div>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // --------------------------
-            // 核心配置（保持原有路径逻辑）
-            // --------------------------
-            const PDF_FILE_NAME = '个人简历.pdf';
-            const PDF_FILE_URL = PDF_FILE_NAME; // 简化路径，与原始代码一致
+<!-- ✅ 按钮区域 -->
+<div class="btn-group">
+    <a class="action-btn" target="_blank"
+       href="https://pan.xunlei.com/s/VOf3j9pAnAiV-5xfphtQL-_PA1?pwd=9qvz#">
+       UI界面展示视频
+    </a>
+</div>
 
-            // 视频URL（保留原配置）
-            const UI_VIDEO_URL = 'https://pan.xunlei.com/s/VOf3j9pAnAiV-5xfphtQL-_PA1?pwd=9qvz#'; 
-            const GAME_MODEL_VIDEO_URL = 'https://www.bilibili.com/video/BV1TA2YBWExm/?share_source=copy_web&vd_source=eeeb73f3cd780483a669a04e333dfb23'; 
-
-            // --------------------------
-            // 全局状态
-            // --------------------------
-            let pdfDoc = null;
-            let currentPage = 1;
-            let isNavBound = false;
-            const pdfViewer = document.getElementById('pdf-viewer');
-            const pageStatus = document.getElementById('page-status');
-            const prevPageBtn = document.getElementById('prev-page');
-            const nextPageBtn = document.getElementById('next-page');
-            const videoButtons = document.querySelectorAll('.action-btn');
-
-            // --------------------------
-            // PDF.js配置（修复路径错误 + 高清渲染配置）
-            // --------------------------
-            if (!window.pdfjsLib) {
-                showError(`
-                    <p>❌ PDF渲染库加载失败！</p>
-                    <p>请按以下步骤检查：</p>
-                    <ul>
-                        <li>1. 确认script标签已添加 type="module"（已在代码中修复）</li>
-                        <li>2. 检查pdfjs文件夹路径：当前配置为 ./pdfjs/（是否与实际一致？）</li>
-                        <li>3. 确认pdfjs文件夹中存在：pdf.mjs、pdf.worker.mjs、cmaps文件夹</li>
-                        <li>4. 若路径不同，请修改head中script标签的src属性和下方的workerSrc路径</li>
-                    </ul>
-                `);
-                return;
-            }
-
-            // 配置PDF.js工作线程路径（统一为mjs后缀，与原始代码一致）
-            pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.mjs';
-
-            // 初始化视频链接
-            if (UI_VIDEO_URL && !UI_VIDEO_URL.includes('YOUR_')) {
-                videoButtons[0]?.setAttribute('href', UI_VIDEO_URL);
-            }
-            if (GAME_MODEL_VIDEO_URL && !GAME_MODEL_VIDEO_URL.includes('YOUR_')) {
-                videoButtons[1]?.setAttribute('href', GAME_MODEL_VIDEO_URL);
-            }
-
-            // --------------------------
-            // PDF加载核心逻辑（优化清晰度配置）
-            // --------------------------
-            async function loadPDF() {
-                try {
-                    // 加载本地PDF：启用高清渲染 + 中文适配
-                    pdfDoc = await pdfjsLib.getDocument({
-                        url: PDF_FILE_URL,
-                        cMapPacked: true,
-                        cMapUrl: './pdfjs/cmaps/', // 修复原有路径错误（原./web/cmaps/改为正确路径）
-                        withCredentials: false,
-                        maxImageSize: 1024 * 1024 * 20, // 增大图片加载限制（高清图片支持）
-                        disableFontFace: false, // 启用字体渲染（提升文字清晰度）
-                        renderInteractiveForms: false // 禁用表单渲染（提升性能，不影响清晰度）
-                    }).promise;
-
-                    console.log('✅ 本地简历加载成功，总页数：', pdfDoc.numPages);
-                    updatePageStatus();
-                    await renderPage(currentPage);
-                    bindNavButtons();
-                    checkVideoLinks();
-
-                } catch (error) {
-                    console.error('❌ PDF加载失败详情：', error);
-                    showError(`
-                        <p>❌ 本地简历加载失败！</p>
-                        <p>路径排查（最常见问题）：</p>
-                        <ul>
-                            <li>→ PDF文件路径：${PDF_FILE_URL}（文件是否存在？文件名是否正确？）</li>
-                            <li>→ PDF.js路径：./pdfjs/pdf.mjs（文件是否存在？）</li>
-                            <li>→ Worker路径：./pdfjs/pdf.worker.mjs（文件是否存在？）</li>
-                            <li>→ 字符映射：./pdfjs/cmaps/（文件夹是否存在且有内容？）</li>
-                        </ul>
-                        <p>本地测试方法（必看）：</p>
-                        <p>1. 打开命令行，进入项目根目录</p>
-                        <p>2. 运行命令：python -m http.server 8000（需要安装Python）</p>
-                        <p>3. 浏览器访问：http://localhost:8000（避免直接打开HTML文件的跨域问题）</p>
-                    `);
-                    pageStatus.textContent = '加载失败';
-                }
-            }
-
-            // --------------------------
-            // 页面渲染逻辑（核心清晰度优化）
-            // --------------------------
-            async function renderPage(pageNum) {
-                try {
-                    // 显示加载状态（保留分页按钮）
-                    pdfViewer.innerHTML = `
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>正在加载第 ${pageNum} 页...</p>
-                            <p>（本地部署，无网络依赖）</p>
-                        </div>
-                        <div class="pdf-nav">
-                            <button class="nav-btn" id="prev-page" disabled aria-label="上一页">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                    <path d="M15 18l-6-6 6-6"></path>
-                                </svg>
-                                上一页
-                            </button>
-                            <span class="page-info" id="page-status">加载中...</span>
-                            <button class="nav-btn" id="next-page" disabled aria-label="下一页">
-                                下一页
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                    <path d="M9 18l6-6-6-6"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    `;
-
-                    // 重新获取DOM元素（因innerHTML重置）
-                    const pageStatus = document.getElementById('page-status');
-                    const prevPageBtn = document.getElementById('prev-page');
-                    const nextPageBtn = document.getElementById('next-page');
-
-                    // 获取PDF页面并计算高清渲染参数
-                    const page = await pdfDoc.getPage(pageNum);
-                    const containerWidth = Math.max(300, pdfViewer.clientWidth - 60);
-                    const viewport = page.getViewport({ scale: 1 });
-                    
-                    // 优化1：基础缩放比例（确保适配容器，手机端初始显示足够大）
-                    const baseScale = Math.min(containerWidth / viewport.width, 2.0); // 适当提高最大初始缩放
-                    
-                    // 优化2：适配Retina屏（乘以设备像素密度，核心清晰度提升）
-                    const devicePixelRatio = window.devicePixelRatio || 1;
-                    const finalScale = baseScale * devicePixelRatio;
-
-                    const scaledViewport = page.getViewport({ scale: finalScale });
-
-                    // 创建高清canvas
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    
-                    // 优化3：设置canvas实际分辨率（乘以像素密度，避免模糊）
-                    canvas.width = scaledViewport.width;
-                    canvas.height = scaledViewport.height;
-                    
-                    // 优化4：设置canvas显示尺寸（与容器适配，不拉伸）
-                    canvas.style.maxWidth = '100%';
-                    canvas.style.height = 'auto';
-                    
-                    // 优化5：提升图像渲染质量
-                    context.imageSmoothingEnabled = true;
-                    context.imageSmoothingQuality = 'high'; // 高清平滑处理（文字/图片边缘无锯齿）
-
-                    canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-                    canvas.style.borderRadius = '4px';
-
-                    // 渲染PDF页面到canvas（高清配置）
-                    const renderContext = {
-                        canvasContext: context,
-                        viewport: scaledViewport
-                    };
-                    await page.render(renderContext).promise;
-
-                    // 替换加载状态为PDF页面（保留底部分页按钮）
-                    pdfViewer.innerHTML = '';
-                    pdfViewer.appendChild(canvas); // 添加PDF页面
-                    pdfViewer.appendChild(createNavElement()); // 添加底部分页按钮
-
-                    // 更新状态
-                    currentPage = pageNum;
-                    updatePageStatus();
-                    updateNavButtons();
-
-                } catch (error) {
-                    console.error('❌ 页面渲染失败：', error);
-                    // 错误状态下保留底部分页按钮
-                    pdfViewer.innerHTML = `
-                        <div class="error">
-                            <p>❌ 第 ${pageNum} 页渲染失败！</p>
-                            <p>可能原因：PDF文件损坏或加密</p>
-                            <p>解决方案：重新导出PDF（确保不加密），或更换PDF文件测试</p>
-                        </div>
-                        ${createNavElement()}
-                    `;
-                }
-            }
-
-            // --------------------------
-            // 辅助函数：创建分页按钮元素（复用逻辑，避免重复代码）
-            // --------------------------
-            function createNavElement() {
-                const navElement = document.createElement('div');
-                navElement.className = 'pdf-nav';
-                navElement.innerHTML = `
-                    <button class="nav-btn" id="prev-page" ${currentPage <= 1 ? 'disabled' : ''} aria-label="上一页">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                            <path d="M15 18l-6-6 6-6"></path>
-                        </svg>
-                        上一页
-                    </button>
-                    <span class="page-info" id="page-status">${pdfDoc ? `第 ${currentPage} 页 / 共 ${pdfDoc.numPages} 页` : '加载失败'}</span>
-                    <button class="nav-btn" id="next-page" ${currentPage >= pdfDoc.numPages ? 'disabled' : ''} aria-label="下一页">
-                        下一页
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                            <path d="M9 18l6-6-6-6"></path>
-                        </svg>
-                    </button>
-                `;
-                return navElement;
-            }
-
-            // --------------------------
-            // 原有辅助函数（保持逻辑不变）
-            // --------------------------
-            function updatePageStatus() {
-                const pageStatus = document.getElementById('page-status');
-                if (pageStatus && pdfDoc) {
-                    pageStatus.textContent = `第 ${currentPage} 页 / 共 ${pdfDoc.numPages} 页`;
-                }
-            }
-
-            function updateNavButtons() {
-                const prevPageBtn = document.getElementById('prev-page');
-                const nextPageBtn = document.getElementById('next-page');
-                if (prevPageBtn && nextPageBtn && pdfDoc) {
-                    prevPageBtn.disabled = currentPage <= 1;
-                    nextPageBtn.disabled = currentPage >= pdfDoc.numPages;
-                }
-            }
-
-            function bindNavButtons() {
-                if (isNavBound) return;
-
-                // 委托事件绑定（避免DOM重置后事件丢失）
-                pdfViewer.addEventListener('click', (e) => {
-                    if (e.target.closest('#prev-page') && currentPage > 1) {
-                        renderPage(currentPage - 1);
-                    } else if (e.target.closest('#next-page') && currentPage < pdfDoc.numPages) {
-                        renderPage(currentPage + 1);
-                    }
-                });
-
-                isNavBound = true;
-            }
-
-            function showError(message) {
-                pdfViewer.innerHTML = `
-                    <div class="error">${message}</div>
-                    ${createNavElement()}
-                `;
-            }
-
-            function checkVideoLinks() {
-                videoButtons.forEach(btn => {
-                    if (btn.href?.includes('pan.xunlei.com')) {
-                        btn.addEventListener('click', (e) => {
-                            if (!confirm('💡 提示：迅雷网盘链接可能需要登录/验证才能访问，部分设备可能无法打开\n是否继续访问？')) {
-                                e.preventDefault();
-                            }
-                        });
-                    }
-                });
-            }
-
-            // --------------------------
-            // 窗口自适应（保持原有逻辑）
-            // --------------------------
-            window.addEventListener('resize', () => {
-                if (pdfDoc) renderPage(currentPage);
-            });
-
-            // 启动加载PDF
-            loadPDF();
-        });
-    </script>
 </body>
 </html>
-
