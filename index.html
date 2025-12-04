@@ -7,127 +7,210 @@
 
 <style>
 * {margin: 0;padding: 0;box-sizing: border-box;font-family: "Microsoft YaHei", Arial;}
-body {background: #f5f6fa;padding: 30px;}
+body {background: #f4f6f9;padding: 30px;color:#2c3e50;}
 
 .page-title {
     text-align: center;
-    font-size: 30px;
-    margin-bottom: 30px;
-    color: #2c3e50;
+    font-size: 32px;
+    margin-bottom: 40px;
+    font-weight: bold;
 }
 
-/* 通用容器 */
+/* 通用卡片容器 */
 .section-box {
     max-width: 1200px;
     margin: 0 auto 40px;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 3px 15px rgba(0,0,0,.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.1);
     overflow: hidden;
 }
 
-/* 标题栏 */
+/* 顶部标题 */
 .section-header {
-    background: #3498db;
+    background: linear-gradient(135deg,#3498db,#6dd5fa);
     color: white;
-    padding: 20px;
+    padding: 20px 30px;
     font-size: 20px;
+    font-weight: 500;
 }
 
-/* PDF区域 */
+/* PDF区域占位 */
 #pdf-viewer {
     min-height: 600px;
-    padding: 20px;
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color:#888;
+}
+
+/* ✅ 视频封面按钮区 */
+.video-cover {
+    height: 400px;
+    background: linear-gradient(135deg,#000,#333);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* 视频自适应核心 */
+.play-btn {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    color: #e74c3c;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.play-btn:hover {transform: scale(1.1);}
+
+/* ✅ 视频弹窗遮罩 */
+.video-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.video-box {
+    width: 90%;
+    max-width: 1000px;
+    position: relative;
+}
+
+/* ✅ 自适应视频比例 */
 .video-wrapper {
     position: relative;
     width: 100%;
-    padding-top: 56.25%; /* 16:9比例 */
+    padding-top: 56.25%;
     background: black;
 }
 
 .video-wrapper iframe {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
     border: none;
 }
 
-/* 按钮组 */
+/* ✅ 关闭按钮 */
+.close-btn {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+/* 按钮区 */
 .btn-group {
     display: flex;
     justify-content: center;
     gap: 30px;
     flex-wrap: wrap;
-    margin-top: 30px;
+    margin-top: 40px;
 }
 
 .action-btn {
-    padding: 15px 40px;
+    padding: 16px 50px;
     background: #2c3e50;
     color: white;
     text-decoration: none;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 18px;
     transition: .3s;
 }
 
-.action-btn:hover {
-    background: #1a252f;
-}
+.action-btn:hover {background:#1a252f;}
 
-/* 移动端适配 */
 @media(max-width:768px){
-    .page-title {font-size:24px;}
+    .page-title{font-size:24px;}
+    .video-cover{height:260px;}
 }
 </style>
 
-<!-- ✅ 禁止右键 -->
+<!-- ✅ 禁止右键 + 快捷键 -->
 <script>
-document.addEventListener("contextmenu", function(e){
-    e.preventDefault();
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("keydown", e => {
+    if (
+        e.key === "F12" ||
+        (e.ctrlKey && e.key === "s") ||
+        (e.ctrlKey && e.key === "u") ||
+        (e.ctrlKey && e.shiftKey && e.key === "i")
+    ) {
+        e.preventDefault();
+    }
 });
 </script>
-
 </head>
 
 <body>
 
 <h1 class="page-title">个人简历展示平台</h1>
 
-<!-- ✅ PDF 区域（你原有PDF逻辑可以继续用） -->
+<!-- ✅ 简历 PDF 区 -->
 <div class="section-box">
     <div class="section-header">个人简历预览</div>
     <div id="pdf-viewer">
-        <p>✅ 此处继续使用你原来的 PDF.js 渲染代码即可</p>
+        ✅ 这里继续接入你原来的 PDF.js 代码即可（完全兼容）
     </div>
 </div>
 
-<!-- ✅ 游戏模型视频（网页内嵌 + 自适应） -->
+<!-- ✅ 游戏模型展示区 -->
 <div class="section-box">
-    <div class="section-header">🎮 游戏模型展示（网页内播放）</div>
-    <div class="video-wrapper">
-        <iframe 
-            src="https://player.bilibili.com/player.html?bvid=BV1TA2YBWExm&page=1&high_quality=1&danmaku=0"
-            allowfullscreen>
-        </iframe>
+    <div class="section-header">🎮 游戏模型展示（点击播放）</div>
+
+    <div class="video-cover">
+        <div class="play-btn" onclick="openVideo()">▶</div>
     </div>
 </div>
 
-<!-- ✅ 按钮区域 -->
+<!-- ✅ 视频弹窗 -->
+<div class="video-modal" id="videoModal">
+    <div class="video-box">
+        <div class="close-btn" onclick="closeVideo()">✖ 关闭</div>
+        <div class="video-wrapper">
+            <iframe id="gameVideo"
+              src=""
+              allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ 功能按钮区 -->
 <div class="btn-group">
     <a class="action-btn" target="_blank"
        href="https://pan.xunlei.com/s/VOf3j9pAnAiV-5xfphtQL-_PA1?pwd=9qvz#">
        UI界面展示视频
     </a>
 </div>
+
+<!-- ✅ 视频弹窗控制 -->
+<script>
+function openVideo(){
+    document.getElementById("videoModal").style.display = "flex";
+    document.getElementById("gameVideo").src =
+    "https://player.bilibili.com/player.html?bvid=BV1TA2YBWExm&page=1&high_quality=1&danmaku=0";
+}
+
+function closeVideo(){
+    document.getElementById("videoModal").style.display = "none";
+    document.getElementById("gameVideo").src = "";
+}
+</script>
 
 </body>
 </html>
